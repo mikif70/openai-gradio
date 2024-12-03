@@ -92,7 +92,7 @@ def get_pipeline(model_name):
     return "chat"
 
 
-def registry(name: str, token: str | None = None, url: str | None = None, **kwargs):
+def registry(name: str | None = None, token: str | None = None, url: str | None = None, **kwargs):
     """
     Create a Gradio Interface for a model on OpenAI.
 
@@ -101,14 +101,19 @@ def registry(name: str, token: str | None = None, url: str | None = None, **kwar
         - url (str): The Base URL fo OpenAI.
         - token (str, optional): The API key for OpenAI.
     """
-    api_key = token or os.environ.get("OPENAI_API_KEY")
     base_url = url or os.environ.get("OPENAI_BASE_URL")
+
+    model = name or os.environ.get("OPENAI_MODEL")
+    if not model:
+        raise ValueError("OPENAI_MODEL environment variable is not set.")
+
+    api_key = token or os.environ.get("OPENAI_API_KEY")
     if not api_key:
         raise ValueError("OPENAI_API_KEY environment variable is not set.")
 
     pipeline = get_pipeline(name)
     inputs, outputs, preprocess, postprocess = get_interface_args(pipeline)
-    fn = get_fn(name, preprocess, postprocess, api_key, base_url)
+    fn = get_fn(model, preprocess, postprocess, api_key, base_url)
 
     if pipeline == "chat":
         interface = gr.ChatInterface(fn=fn, multimodal=True, **kwargs)
